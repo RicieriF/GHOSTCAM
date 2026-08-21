@@ -12,17 +12,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -30,8 +31,6 @@ import androidx.navigation.compose.rememberNavController
 import io.github.libxposed.service.XposedService
 import io.github.zensu357.camswap.ui.*
 import io.github.zensu357.camswap.ui.theme.CamSwapTheme
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,15 +41,11 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { _ ->
-        checkPermissionsStatus()
-    }
+    ) { _ -> checkPermissionsStatus() }
 
     private val manageExternalStorageLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) {
-        checkPermissionsStatus()
-    }
+    ) { checkPermissionsStatus() }
 
     override fun attachBaseContext(newBase: android.content.Context) {
         super.attachBaseContext(io.github.zensu357.camswap.utils.LocaleHelper.onAttach(newBase))
@@ -58,18 +53,15 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // Migration logic
+
         val configManager = ConfigManager()
         if (configManager.migrateIfNeeded()) {
             Toast.makeText(this, getString(R.string.config_migrated), Toast.LENGTH_LONG).show()
         }
 
-        // Auto-start service if enabled
         if (configManager.getBoolean(ConfigManager.KEY_NOTIFICATION_CONTROL_ENABLED, false)) {
             try {
-                val intent = Intent(this, NotificationService::class.java)
-                startForegroundService(intent)
+                startForegroundService(Intent(this, NotificationService::class.java))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -79,17 +71,14 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
             && Settings.canDrawOverlays(this)
         ) {
             try {
-                val intent = Intent(this, OverlayControlService::class.java)
-                startService(intent)
+                startService(Intent(this, OverlayControlService::class.java))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
 
         setContent {
-            CamSwapTheme {
-                MainApp()
-            }
+            CamSwapTheme { MainApp() }
         }
     }
 
@@ -110,30 +99,29 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
     @Composable
     fun MainApp() {
         val navController = rememberNavController()
-        val items = listOf(Screen.Home, Screen.Manage, Screen.Settings)
+        val items = listOf(Screen.Home, Screen.Manage, Screen.Studio, Screen.Settings)
 
         Scaffold(
             topBar = {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = navBackStackEntry?.destination?.route
-                
                 if (currentRoute != null) {
                     val title = when (currentRoute) {
                         Screen.Home.route -> stringResource(id = R.string.app_name)
                         Screen.Manage.route -> stringResource(Screen.Manage.titleResId)
+                        Screen.Studio.route -> stringResource(Screen.Studio.titleResId)
                         Screen.Settings.route -> stringResource(Screen.Settings.titleResId)
                         else -> stringResource(id = R.string.app_name)
                     }
-                    
                     TopAppBar(
-                        title = { 
+                        title = {
                             Text(
                                 text = title,
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontSize = 22.sp,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
                                 )
-                            ) 
+                            )
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
                             containerColor = MaterialTheme.colorScheme.background,
@@ -146,7 +134,6 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
                 NavigationBar {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentRoute = navBackStackEntry?.destination?.route
-
                     items.forEach { screen ->
                         NavigationBarItem(
                             icon = { Icon(screen.icon, contentDescription = stringResource(screen.titleResId)) },
@@ -154,9 +141,7 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
                             selected = currentRoute == screen.route,
                             onClick = {
                                 navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
+                                    popUpTo(navController.graph.findStartDestination().id) { saveState = true }
                                     launchSingleTop = true
                                     restoreState = true
                                 }
@@ -182,12 +167,9 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
                         onPermissionRequest = { checkAndRequestPermissions() }
                     )
                 }
-                composable(Screen.Manage.route) {
-                    ManageScreen(viewModel = mediaViewModel)
-                }
-                composable(Screen.Settings.route) {
-                    SettingsScreen(viewModel = mainViewModel)
-                }
+                composable(Screen.Manage.route) { ManageScreen(viewModel = mediaViewModel) }
+                composable(Screen.Studio.route) { StudioScreen() }
+                composable(Screen.Settings.route) { SettingsScreen(viewModel = mainViewModel) }
             }
         }
     }
@@ -211,8 +193,7 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
     }
 
     private fun checkPermissionsStatus() {
-        val hasPermission = hasRequiredPermissions()
-        mainViewModel.updatePermissionStatus(hasPermission)
+        mainViewModel.updatePermissionStatus(hasRequiredPermissions())
     }
 
     private fun checkAndRequestPermissions() {
@@ -225,23 +206,20 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
                         intent.data = Uri.parse("package:$packageName")
                         manageExternalStorageLauncher.launch(intent)
                     } catch (e: Exception) {
-                        val intent = Intent()
-                        intent.action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION
+                        val intent = Intent().apply { action = Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION }
                         manageExternalStorageLauncher.launch(intent)
                     }
                 }
-                
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                         requestPermissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
-                     }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestPermissionLauncher.launch(arrayOf(Manifest.permission.POST_NOTIFICATIONS))
                 }
             } else {
-                val permissions = getRequiredPermissions()
-                requestPermissionLauncher.launch(permissions)
+                requestPermissionLauncher.launch(getRequiredPermissions())
             }
         } else {
-             initDirectory()
+            initDirectory()
         }
     }
 
@@ -250,14 +228,11 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
             val storageGranted = android.os.Environment.isExternalStorageManager()
             val notificationGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-            } else {
-                true
-            }
+            } else true
             return storageGranted && notificationGranted
-        } else {
-            return getRequiredPermissions().all {
-                ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
-            }
+        }
+        return getRequiredPermissions().all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
         }
     }
 
@@ -275,8 +250,6 @@ class MainActivity : ComponentActivity(), App.ServiceStateListener {
 
     private fun initDirectory() {
         val cameraDir = File(android.os.Environment.getExternalStorageDirectory().absolutePath + "/DCIM/Camera1/")
-        if (!cameraDir.exists()) {
-            cameraDir.mkdirs()
-        }
+        if (!cameraDir.exists()) cameraDir.mkdirs()
     }
 }
