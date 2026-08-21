@@ -153,6 +153,7 @@ private fun PlanRow(name: String, duration: String, price: String) {
 
 @Composable
 private fun GhostMark() {
+    val ghostColor = if (MaterialTheme.colorScheme.background.luminanceCompat() < 0.5f) Color.White else Color(0xFFF2F2F2)
     Canvas(modifier = Modifier.size(116.dp)) {
         val w = size.width
         val h = size.height
@@ -168,10 +169,10 @@ private fun GhostMark() {
             lineTo(w * 0.36f, h * 0.84f)
             close()
         }
-        drawPath(body, color = if (MaterialTheme.colorScheme.background.luminance() < 0.5f) Color.White else Color(0xFFF2F2F2))
+        drawPath(body, color = ghostColor)
         drawCircle(Color.Red, radius = w * 0.055f, center = androidx.compose.ui.geometry.Offset(w * 0.41f, h * 0.40f))
         drawCircle(Color.Red, radius = w * 0.055f, center = androidx.compose.ui.geometry.Offset(w * 0.61f, h * 0.40f))
     }
 }
 
-private fun Color.luminance(): Float = (red * 0.2126f + green * 0.7152f + blue * 0.0722f)
+private fun Color.luminanceCompat(): Float = red * 0.2126f + green * 0.7152f + blue * 0.0722f
