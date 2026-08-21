@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import io.github.zensu357.camswap.GhostCamLicenseGate
@@ -55,13 +56,17 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun CamSwapTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
-    content: @Composable () -> Unit
-) {
+fun CamSwapTheme(content: @Composable () -> Unit) {
+    val context = LocalContext.current
+    val systemDark = isSystemInDarkTheme()
+    val darkTheme = when (GhostCamThemePrefs.get(context)) {
+        GhostCamThemePrefs.DARK -> true
+        GhostCamThemePrefs.LIGHT -> false
+        else -> systemDark
+    }
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val view = LocalView.current
+
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
@@ -72,10 +77,7 @@ fun CamSwapTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography
-    ) {
+    MaterialTheme(colorScheme = colorScheme, typography = Typography) {
         GhostCamLicenseGate(content)
     }
 }
