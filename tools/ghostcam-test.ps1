@@ -20,8 +20,16 @@ function Invoke-Adb {
         [switch]$Quiet
     )
 
-    $output = & adb @Args 2>&1
-    $code = $LASTEXITCODE
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $output = & adb @Args 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+
     if ($output -and -not $Quiet) { $output | ForEach-Object { Write-Host $_ } }
     if ($code -ne 0 -and -not $AllowFailure) {
         throw "adb failed ($code): adb $($Args -join ' ')"
@@ -31,8 +39,16 @@ function Invoke-Adb {
 
 function Assert-Device {
     Write-Step 'Checking ADB device'
-    $lines = & adb devices 2>&1
-    if ($LASTEXITCODE -ne 0) { throw 'adb was not found or failed.' }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = 'Continue'
+        $lines = & adb devices 2>&1
+        $code = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    if ($code -ne 0) { throw 'adb was not found or failed.' }
     $devices = @($lines | Select-String -Pattern "\tdevice$")
     if ($devices.Count -ne 1) {
         throw "Expected exactly one authorized device. Found $($devices.Count). Run: adb devices"
