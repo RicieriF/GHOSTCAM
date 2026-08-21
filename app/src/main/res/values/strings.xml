@@ -2,14 +2,14 @@
 <resources>
     <string name="app_name">GHOSTCAM</string>
     <string name="module_description">GHOSTCAM 安卓虚拟摄像头</string>
-    <string name="click_to_go_to_repo">前往 GitHub 仓库</string>
-    <string name="description">请访问在线仓库查看最新更新、使用教程及反馈问题</string>
+    <string name="click_to_go_to_repo">GHOSTCAM</string>
+    <string name="description">GHOSTCAM Virtual Camera System</string>
     <string name="Warning">严禁用于任何非法用途！！使用者需自行承担所有责任与后果！！</string>
     <string name="switch1">强制显示权限缺失警告</string>
     <string name="switch2">临时禁用模块（开启即禁用）</string>
     <string name="switch3">播放视频声音</string>
     <string name="switch4">强制所有应用使用私有目录</string>
-    <string name="gitee" translatable="false">前往 Gitee 仓库（国内加速）</string>
+    <string name="gitee" translatable="false">GHOSTCAM</string>
     <string name="switch5">禁用 Toast 提示信息</string>
     <string name="permission_switch_text">授予本地存储权限</string>
     <string name="permission_lack_warn">缺少必要权限</string>
@@ -71,6 +71,7 @@
 
     <string name="nav_home">首页</string>
     <string name="nav_manage">管理</string>
+    <string name="nav_studio">画面</string>
     <string name="nav_settings">设置</string>
 
     <string name="settings_force_private_dir">强制私有目录</string>
@@ -111,7 +112,7 @@
 
     <string name="version_current">当前版本</string>
     <string name="version_latest">最新版本</string>
-    <string name="version_check_github">点击前往 GitHub 查看</string>
+    <string name="version_check_github">检查更新</string>
 
     <string name="status_module_inactive">模块未激活</string>
     <string name="status_activate_hint">请在 Xposed 管理器中激活模块后重启app</string>
@@ -124,8 +125,8 @@
     <string name="status_select_image_hint">请在管理页面的「图片」 Tab 中选择图片</string>
 
     <string name="support_title">支持</string>
-    <string name="support_github">在 GitHub 查看、反馈</string>
-    <string name="support_telegram">加入 Telegram 频道</string>
+    <string name="support_github">GHOSTCAM 支持</string>
+    <string name="support_telegram">GHOSTCAM 支持</string>
     <string name="media_current_selection">当前选择</string>
 
     <string name="settings_category_stream">网络流设置</string>
