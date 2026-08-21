@@ -15,15 +15,15 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 1
 
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -33,30 +33,42 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android dependencies
+      - name: Install Android packages
         run: |
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+          sdkmanager \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;25.1.8937393" \
+            "cmake;3.22.1"
 
       - name: Verify native dependency
-        run: test -f app/src/main/cpp/third_party/Dobby/CMakeLists.txt
+        run: |
+          test -f app/src/main/cpp/third_party/Dobby/CMakeLists.txt
+
+      - name: Integrate GHOSTCAM runtime controls
+        run: |
+          python3 .github/scripts/apply_ghostcam_runtime_patches.py
+          grep -R "GHOSTCAM_MANUAL_TEXTURE_TRANSFORM" -n app/src/main/java
+          grep -R "GhostCamEntitledShell" -n app/src/main/java/io/github/zensu357/camswap/GhostCamLicenseGate.kt
 
       - name: Make Gradle executable
-        run: chmod +x ./gradlew
+        run: chmod +x gradlew
 
       - name: Build debug APKs
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: Collect APKs
         run: |
-          mkdir -p artifacts
-          find app/build/outputs/apk -type f -name "*.apk" -print -exec cp {} artifacts/ \;
-          ls -lah artifacts
+          mkdir -p dist
+          find app/build/outputs/apk/debug -type f -name '*.apk' -print -exec cp {} dist/ \;
+          test -n "$(find dist -type f -name '*.apk' -print -quit)"
+          sha256sum dist/*.apk | tee dist/SHA256SUMS.txt
 
-      - name: Upload APK
+      - name: Upload GHOSTCAM test APKs
         uses: actions/upload-artifact@v4
         with:
           name: GHOSTCAM-v0.1-test-apk
-          path: artifacts/*.apk
+          path: dist/*
           if-no-files-found: error
           retention-days: 14
