@@ -1,0 +1,19 @@
+name = "ghostcam-api"
+main = "worker.js"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ghostcam"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+PUBLIC_BASE_URL = "https://ghostcam-api.YOUR_SUBDOMAIN.workers.dev"
+SQUARE_LOCATION_ID = "REPLACE_WITH_SQUARE_LOCATION_ID"
+SQUARE_VERSION = "2026-07-15"
+SQUARE_WEBHOOK_URL = "https://ghostcam-api.YOUR_SUBDOMAIN.workers.dev/api/square/webhook"
+
+# Secrets must be configured with `wrangler secret put` and must never be committed:
+# ADMIN_TOKEN
+# SQUARE_ACCESS_TOKEN
+# SQUARE_WEBHOOK_SIGNATURE_KEY
