@@ -1,0 +1,53 @@
+name: Build GHOSTCAM APK
+
+on:
+  push:
+    branches:
+      - codex/ghostcam-v0.1
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android dependencies
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build arm64 debug APK
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Collect APK
+        run: |
+          mkdir -p artifacts
+          find app/build/outputs/apk -type f -name "*.apk" -print -exec cp {} artifacts/ \;
+          ls -lah artifacts
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GHOSTCAM-v0.1-test-apk
+          path: artifacts/*.apk
+          if-no-files-found: error
+          retention-days: 14
