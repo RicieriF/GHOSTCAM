@@ -123,7 +123,7 @@ fun GhostCamLicenseGate(content: @Composable () -> Unit) {
                 )
             }
 
-            HorizontalDivider()
+            Divider()
             Text("BUILD DE TESTE V0.1", fontWeight = FontWeight.Bold)
             Text(
                 "Chaves temporárias para validar a primeira APK:\nGHOST-DAY-TEST\nGHOST-3DAY-TEST\nGHOST-WEEK-TEST",
