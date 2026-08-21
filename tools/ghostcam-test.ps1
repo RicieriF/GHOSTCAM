@@ -16,12 +16,13 @@ function Write-Step([string]$Message) {
 function Invoke-Adb {
     param(
         [Parameter(Mandatory=$true)][string[]]$Args,
-        [switch]$AllowFailure
+        [switch]$AllowFailure,
+        [switch]$Quiet
     )
 
     $output = & adb @Args 2>&1
     $code = $LASTEXITCODE
-    if ($output) { $output | ForEach-Object { Write-Host $_ } }
+    if ($output -and -not $Quiet) { $output | ForEach-Object { Write-Host $_ } }
     if ($code -ne 0 -and -not $AllowFailure) {
         throw "adb failed ($code): adb $($Args -join ' ')"
     }
@@ -41,28 +42,32 @@ function Assert-Device {
 
 function Show-PackageInfo {
     Write-Step 'Checking installed GHOSTCAM build'
-    Invoke-Adb -Args @('shell','dumpsys','package',$ModulePackage) |
-        Select-String -Pattern 'versionName|versionCode|lastUpdateTime' |
+    $pkg = Invoke-Adb -Args @('shell','dumpsys','package',$ModulePackage) -Quiet
+    $pkg | Select-String -Pattern 'versionName|versionCode|lastUpdateTime' |
         ForEach-Object { Write-Host $_.Line }
 }
 
 function Show-VectorState {
     Write-Step 'Checking Vector scope'
-    Invoke-Adb -Args @('shell','su','-c',"/data/adb/lspd/cli scope list $ModulePackage") -AllowFailure |
-        ForEach-Object { Write-Host $_ }
+    $scope = Invoke-Adb -Args @('shell','su','-c','/data/adb/lspd/cli scope') -AllowFailure -Quiet
+    if ($scope) {
+        $scope | ForEach-Object { Write-Host $_ }
+    } else {
+        Write-Warning 'Vector scope query returned no output.'
+    }
 }
 
 function Launch-Camera {
     if ($NoLaunch) { return }
     Write-Step "Restarting $CameraPackage"
-    Invoke-Adb -Args @('shell','am','force-stop',$CameraPackage)
+    Invoke-Adb -Args @('shell','am','force-stop',$CameraPackage) -Quiet
     Start-Sleep -Milliseconds 500
-    Invoke-Adb -Args @('shell','monkey','-p',$CameraPackage,'1')
+    Invoke-Adb -Args @('shell','monkey','-p',$CameraPackage,'1') -Quiet
     Start-Sleep -Seconds 3
 }
 
 function Get-CameraPid {
-    $pidLine = Invoke-Adb -Args @('shell','pidof',$CameraPackage) -AllowFailure
+    $pidLine = Invoke-Adb -Args @('shell','pidof',$CameraPackage) -AllowFailure -Quiet
     $pidValue = ($pidLine | Select-Object -First 1).ToString().Trim()
     if (-not $pidValue) { throw "$CameraPackage is not running." }
     Write-Host "Camera PID: $pidValue"
@@ -71,7 +76,7 @@ function Get-CameraPid {
 
 function Show-InjectionEvidence {
     Write-Step 'Checking Vector/CamSwap injection'
-    $logs = Invoke-Adb -Args @('logcat','-d')
+    $logs = Invoke-Adb -Args @('logcat','-d') -Quiet
     $hits = $logs | Select-String -Pattern 'VectorModuleManager.*camswap|LibXposed.*process=com\.motorola\.camera3|onPackageReady: package=com\.motorola\.camera3|NativeHook.*init result=true|ImageReader:'
     if (-not $hits) {
         $script:Failed = $true
@@ -83,7 +88,7 @@ function Show-InjectionEvidence {
 
 function Show-ReceiverState {
     Write-Step 'Inspecting ACTION_UPDATE_CONFIG receivers'
-    $dump = Invoke-Adb -Args @('shell','dumpsys','activity','broadcasts')
+    $dump = Invoke-Adb -Args @('shell','dumpsys','activity','broadcasts') -Quiet
     $hits = $dump | Select-String -Pattern 'io\.github\.zensu357\.camswap\.ACTION_UPDATE_CONFIG|Exported Denial|not specifying RECEIVER_EXPORTED|com\.motorola\.camera3'
     $hits | Select-Object -Last 120 | ForEach-Object { Write-Host $_.Line }
     if ($hits | Select-String -Pattern 'not specifying RECEIVER_EXPORTED') {
@@ -93,10 +98,10 @@ function Show-ReceiverState {
 
 function Test-Ipc {
     Write-Step 'Testing GHOSTCAM host to camera IPC'
-    Invoke-Adb -Args @('logcat','-c')
+    Invoke-Adb -Args @('logcat','-c') -Quiet
     Launch-Camera
     Start-Sleep -Seconds 3
-    $logs = Invoke-Adb -Args @('logcat','-d')
+    $logs = Invoke-Adb -Args @('logcat','-d') -Quiet
     $pattern = 'config request broadcast sent|CS-Host|config broadcast|Binder|video_binder|privateCache|forcePrivate|ACTION_UPDATE_CONFIG|Exported Denial'
     $hits = $logs | Select-String -Pattern $pattern
     if ($hits) {
@@ -109,10 +114,10 @@ function Test-Ipc {
 
 function Test-ManualUpdate {
     Write-Step 'Testing exported ACTION_UPDATE_CONFIG receiver with minimal JSON'
-    Invoke-Adb -Args @('logcat','-c')
-    Invoke-Adb -Args @('shell','am','broadcast','-a','io.github.zensu357.camswap.ACTION_UPDATE_CONFIG','-p',$CameraPackage,'--es','config_json','{}')
+    Invoke-Adb -Args @('logcat','-c') -Quiet
+    Invoke-Adb -Args @('shell','am','broadcast','-a','io.github.zensu357.camswap.ACTION_UPDATE_CONFIG','-p',$CameraPackage,'--es','config_json','{}') -Quiet
     Start-Sleep -Seconds 1
-    $logs = Invoke-Adb -Args @('logcat','-d')
+    $logs = Invoke-Adb -Args @('logcat','-d') -Quiet
     $hits = $logs | Select-String -Pattern 'CamSwap|ACTION_UPDATE_CONFIG|Exported Denial|config'
     $hits | ForEach-Object { Write-Host $_.Line }
 }
