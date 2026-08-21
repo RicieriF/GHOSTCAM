@@ -56,7 +56,7 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: GHOSTCAM-v0.1-test-apk
+          name: GHOSTCAM-v0.2-test-apk
           path: artifacts/*.apk
           if-no-files-found: error
           retention-days: 14
