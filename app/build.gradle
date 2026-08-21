@@ -33,7 +33,7 @@ android {
         minSdk 26
         targetSdk 36
         versionCode versionCodeInt
-        versionName "0.1.0-test"
+        versionName "0.2.0-test"
         buildConfigField "String", "BUILD_TIME", "\"${buildTime}\""
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
