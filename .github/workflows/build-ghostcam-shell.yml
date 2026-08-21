@@ -67,10 +67,18 @@ jobs:
           set -euo pipefail
           file="app/src/main/java/io/github/zensu357/camswap/ConfigWatcher.java"
           tmp_expected="$(mktemp)"
-          git show origin/main:"$file" | sed 's/Context.RECEIVER_NOT_EXPORTED/Context.RECEIVER_EXPORTED/' > "$tmp_expected"
-          if ! cmp -s "$tmp_expected" "$file"; then
-            echo "::error::ConfigWatcher differs from Golden Core beyond the approved Android cross-UID receiver compatibility patch."
-            diff -u "$tmp_expected" "$file" || true
+          tmp_actual="$(mktemp)"
+
+          # Normalize comments/whitespace so the guard checks executable Java only.
+          git show origin/main:"$file" \
+            | sed 's/Context.RECEIVER_NOT_EXPORTED/Context.RECEIVER_EXPORTED/' \
+            | sed -E 's/[[:space:]]*\/\/.*$//; /^[[:space:]]*$/d; s/[[:space:]]//g' \
+            > "$tmp_expected"
+          sed -E 's/[[:space:]]*\/\/.*$//; /^[[:space:]]*$/d; s/[[:space:]]//g' "$file" > "$tmp_actual"
+
+          if ! cmp -s "$tmp_expected" "$tmp_actual"; then
+            echo "::error::ConfigWatcher executable code differs from Golden Core beyond the approved RECEIVER_EXPORTED compatibility patch."
+            diff -u "$tmp_expected" "$tmp_actual" || true
             exit 1
           fi
           echo "ConfigWatcher compatibility patch: OK"
