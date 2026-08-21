@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Troque apenas esta URL depois de publicar backend/cloudflare. -->
+    <string name="ghostcam_backend_base_url" translatable="false">https://YOUR-WORKER.workers.dev</string>
+</resources>
