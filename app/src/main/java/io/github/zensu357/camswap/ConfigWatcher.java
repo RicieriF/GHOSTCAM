@@ -38,7 +38,7 @@ public final class ConfigWatcher {
      */
     public void init(final Context context) {
         if (configObserver != null)
-            return; // already initialized
+            return;
 
         LogUtil.log("【CS】初始化配置监听");
         configObserver = new android.database.ContentObserver(new Handler(Looper.getMainLooper())) {
@@ -60,7 +60,6 @@ public final class ConfigWatcher {
             LogUtil.log("【CS】注册 ContentObserver 失败: " + e);
         }
 
-        // Fallback: FileObserver when Provider unavailable
         if (!observerRegistered) {
             LogUtil.log("【CS】降级到 FileObserver 监听");
             try {
@@ -85,13 +84,10 @@ public final class ConfigWatcher {
                 LogUtil.log("【CS】FileObserver 启动失败: " + e);
             }
 
-            // Active Config Request
-            // request config via broadcast
             new Handler(Looper.getMainLooper()).postDelayed(() -> VideoManager.getConfig().requestConfig(context),
                     1000);
         }
 
-        // BroadcastReceiver for control signals
         registerBroadcastReceiver(context);
     }
 
@@ -101,8 +97,6 @@ public final class ConfigWatcher {
                 @Override
                 public void onReceive(Context ctx, Intent intent) {
                     String action = intent.getAction();
-                    // received broadcast action
-
                     if (IpcContract.ACTION_UPDATE_CONFIG.equals(action)) {
                         handleConfigUpdate(intent);
                     }
@@ -111,7 +105,10 @@ public final class ConfigWatcher {
             IntentFilter filter = new IntentFilter();
             filter.addAction(IpcContract.ACTION_UPDATE_CONFIG);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                context.registerReceiver(receiver, filter, Context.RECEIVER_NOT_EXPORTED);
+                // The configuration response is sent from the GHOSTCAM host app into
+                // the target app process. Android 13+ blocks that cross-UID explicit
+                // broadcast when this dynamic receiver is marked NOT_EXPORTED.
+                context.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED);
             } else {
                 context.registerReceiver(receiver, filter);
             }
@@ -127,25 +124,21 @@ public final class ConfigWatcher {
         if (configJson == null)
             return;
 
-        // Snapshot old values
         String oldVideo = config.getString(ConfigManager.KEY_SELECTED_VIDEO, "");
         String oldImage = config.getString(ConfigManager.KEY_SELECTED_IMAGE, "");
         String oldMode = config.getString(ConfigManager.KEY_REPLACE_MODE, ConfigManager.REPLACE_MODE_VIDEO);
         boolean oldFpd = config.getBoolean(ConfigManager.KEY_FORCE_PRIVATE_DIR, false);
         int oldRotation = config.getInt(ConfigManager.KEY_VIDEO_ROTATION_OFFSET, 0);
-        // Stream config snapshots
         String oldSourceType = config.getString(ConfigManager.KEY_MEDIA_SOURCE_TYPE, ConfigManager.MEDIA_SOURCE_LOCAL);
         String oldStreamUrl = config.getString(ConfigManager.KEY_STREAM_URL, "");
 
         config.updateConfigFromJSON(configJson);
 
-        // Snapshot new values
         String newVideo = config.getString(ConfigManager.KEY_SELECTED_VIDEO, "");
         String newImage = config.getString(ConfigManager.KEY_SELECTED_IMAGE, "");
         String newMode = config.getString(ConfigManager.KEY_REPLACE_MODE, ConfigManager.REPLACE_MODE_VIDEO);
         boolean newFpd = config.getBoolean(ConfigManager.KEY_FORCE_PRIVATE_DIR, false);
         int newRotation = config.getInt(ConfigManager.KEY_VIDEO_ROTATION_OFFSET, 0);
-        // Stream config new values
         String newSourceType = config.getString(ConfigManager.KEY_MEDIA_SOURCE_TYPE, ConfigManager.MEDIA_SOURCE_LOCAL);
         String newStreamUrl = config.getString(ConfigManager.KEY_STREAM_URL, "");
 
@@ -157,7 +150,6 @@ public final class ConfigWatcher {
                 !oldStreamUrl.equals(newStreamUrl);
 
         if (mediaChanged) {
-            // Handle Binder-based video file transfer
             if (config.getBoolean(ConfigManager.KEY_FORCE_PRIVATE_DIR, false)) {
                 extractVideoFromBinder(intent);
             }
@@ -205,5 +197,4 @@ public final class ConfigWatcher {
             reply.recycle();
         }
     }
-
 }
