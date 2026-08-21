@@ -92,12 +92,12 @@ function Show-ReceiverState {
 }
 
 function Test-Ipc {
-    Write-Step 'Testing GHOSTCAM host -> camera IPC'
+    Write-Step 'Testing GHOSTCAM host to camera IPC'
     Invoke-Adb -Args @('logcat','-c')
     Launch-Camera
     Start-Sleep -Seconds 3
     $logs = Invoke-Adb -Args @('logcat','-d')
-    $pattern = 'config request broadcast sent|CS-Host|配置广播已发送到|配置更新|Binder 视频 FD|video_binder|privateCache|forcePrivate|ACTION_UPDATE_CONFIG|Exported Denial'
+    $pattern = 'config request broadcast sent|CS-Host|config broadcast|Binder|video_binder|privateCache|forcePrivate|ACTION_UPDATE_CONFIG|Exported Denial'
     $hits = $logs | Select-String -Pattern $pattern
     if ($hits) {
         $hits | ForEach-Object { Write-Host $_.Line }
@@ -113,7 +113,7 @@ function Test-ManualUpdate {
     Invoke-Adb -Args @('shell','am','broadcast','-a','io.github.zensu357.camswap.ACTION_UPDATE_CONFIG','-p',$CameraPackage,'--es','config_json','{}')
     Start-Sleep -Seconds 1
     $logs = Invoke-Adb -Args @('logcat','-d')
-    $hits = $logs | Select-String -Pattern 'CamSwap|配置更新|ACTION_UPDATE_CONFIG|Exported Denial'
+    $hits = $logs | Select-String -Pattern 'CamSwap|ACTION_UPDATE_CONFIG|Exported Denial|config'
     $hits | ForEach-Object { Write-Host $_.Line }
 }
 
