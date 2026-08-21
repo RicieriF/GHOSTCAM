@@ -41,6 +41,7 @@ public final class ConfigWatcher {
             return;
 
         LogUtil.log("【CS】初始化配置监听");
+        registerBroadcastReceiver(context);
         configObserver = new android.database.ContentObserver(new Handler(Looper.getMainLooper())) {
             @Override
             public void onChange(boolean selfChange) {
@@ -84,11 +85,8 @@ public final class ConfigWatcher {
                 LogUtil.log("【CS】FileObserver 启动失败: " + e);
             }
 
-            new Handler(Looper.getMainLooper()).postDelayed(() -> VideoManager.getConfig().requestConfig(context),
-                    1000);
+            VideoManager.getConfig().requestConfig(context);
         }
-
-        registerBroadcastReceiver(context);
     }
 
     private void registerBroadcastReceiver(final Context context) {
