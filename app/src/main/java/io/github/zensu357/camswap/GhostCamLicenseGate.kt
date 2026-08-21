@@ -17,6 +17,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.zensu357.camswap.ui.theme.GhostCamThemeMode
+import io.github.zensu357.camswap.ui.theme.GhostCamThemePrefs
 
 private const val PREFS = "ghostcam_license"
 private const val KEY_LICENSE = "license_key"
@@ -34,7 +36,9 @@ private val testKeys = mapOf(
 @Composable
 fun GhostCamLicenseGate(content: @Composable () -> Unit) {
     val context = LocalContext.current
+    GhostCamThemePrefs.initialize(context)
     val prefs = remember { context.getSharedPreferences(PREFS, Context.MODE_PRIVATE) }
+    val deviceId = remember { GhostCamDeviceIdentity.id(context) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var expiresAt by remember { mutableLongStateOf(prefs.getLong(KEY_EXPIRES, 0L)) }
     var plan by remember { mutableStateOf(prefs.getString(KEY_PLAN, "") ?: "") }
@@ -63,6 +67,28 @@ fun GhostCamLicenseGate(content: @Composable () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("ESTE DISPOSITIVO", fontWeight = FontWeight.Bold)
+                    Text(
+                        deviceId,
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 20.sp
+                    )
+                    Text(
+                        "Este ID será usado para vincular uma licença a este telefone sem alterar os identificadores internos do módulo.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            ThemeSelector(context)
 
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
@@ -124,19 +150,62 @@ fun GhostCamLicenseGate(content: @Composable () -> Unit) {
             }
 
             Divider()
-            Text("BUILD DE TESTE V0.1", fontWeight = FontWeight.Bold)
+            Text("BUILD SEGURA DE TESTE", fontWeight = FontWeight.Bold)
             Text(
-                "Chaves temporárias para validar a primeira APK:\nGHOST-DAY-TEST\nGHOST-3DAY-TEST\nGHOST-WEEK-TEST",
+                "Chaves temporárias:\nGHOST-DAY-TEST\nGHOST-3DAY-TEST\nGHOST-WEEK-TEST",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall
             )
             Text(
-                "Na versão comercial, a chave será validada pelo servidor, vinculada a 1 dispositivo e poderá ser renovada ou revogada remotamente.",
+                "A câmera e os hooks permanecem no núcleo original. Pagamentos e validação remota serão conectados depois dos testes de compatibilidade.",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun ThemeSelector(context: Context) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text("TEMA", fontWeight = FontWeight.Bold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ThemeButton("Sistema", GhostCamThemeMode.SYSTEM, context, Modifier.weight(1f))
+                ThemeButton("Claro", GhostCamThemeMode.LIGHT, context, Modifier.weight(1f))
+                ThemeButton("Escuro", GhostCamThemeMode.DARK, context, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ThemeButton(
+    label: String,
+    mode: GhostCamThemeMode,
+    context: Context,
+    modifier: Modifier
+) {
+    val selected = GhostCamThemePrefs.mode == mode
+    if (selected) {
+        Button(
+            onClick = { GhostCamThemePrefs.set(context, mode) },
+            modifier = modifier,
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+        ) { Text(label, fontSize = 12.sp) }
+    } else {
+        OutlinedButton(
+            onClick = { GhostCamThemePrefs.set(context, mode) },
+            modifier = modifier,
+            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp)
+        ) { Text(label, fontSize = 12.sp) }
     }
 }
 
