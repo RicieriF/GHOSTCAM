@@ -43,7 +43,8 @@ jobs:
             "app/src/main/java/io/github/zensu357/camswap/IpcContract.java"
             "app/src/main/java/io/github/zensu357/camswap/VideoProvider.java"
             "app/src/main/cpp"
-            "app/src/main/resources/META-INF/xposed"
+            "app/src/main/resources/META-INF/xposed/java_init.list"
+            "app/src/main/resources/META-INF/xposed/module.prop"
           )
 
           failed=0
