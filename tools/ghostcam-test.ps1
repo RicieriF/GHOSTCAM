@@ -49,10 +49,17 @@ function Show-PackageInfo {
 
 function Show-VectorState {
     Write-Step 'Checking Vector scope'
-    $scope = Invoke-Adb -Args @('shell','su','-c','/data/adb/lspd/cli scope') -AllowFailure -Quiet
+    $scopeCommand = "/data/adb/lspd/cli scope ls $ModulePackage"
+    $scope = Invoke-Adb -Args @('shell','su','-c',$scopeCommand) -AllowFailure -Quiet
     if ($scope) {
         $scope | ForEach-Object { Write-Host $_ }
+        $cameraScoped = $scope | Select-String -SimpleMatch $CameraPackage
+        if (-not $cameraScoped) {
+            $script:Failed = $true
+            Write-Warning "$CameraPackage is not present in Vector scope for $ModulePackage."
+        }
     } else {
+        $script:Failed = $true
         Write-Warning 'Vector scope query returned no output.'
     }
 }
