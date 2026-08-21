@@ -44,6 +44,9 @@ jobs:
       - name: Apply safe GHOSTCAM branding cleanup
         run: python3 .github/scripts/safe_branding_cleanup.py
 
+      - name: Apply safe runtime identity fix
+        run: python3 .github/scripts/safe_runtime_identity_fix.py
+
       - name: Make Gradle executable
         run: chmod +x ./gradlew
 
