@@ -2,14 +2,14 @@
 <resources>
     <string name="app_name">GHOSTCAM</string>
     <string name="module_description">GHOSTCAM virtual camera module</string>
-    <string name="click_to_go_to_repo">Go to GitHub Repo</string>
-    <string name="description">Visit the online repo for updates, tutorials, and feedback.</string>
+    <string name="click_to_go_to_repo">GHOSTCAM</string>
+    <string name="description">GHOSTCAM Virtual Camera System</string>
     <string name="Warning">Strictly prohibited for illegal use!! Users bear all responsibilities and consequences!!</string>
     <string name="switch1">Force Show Permission Warning</string>
     <string name="switch2">Temporarily Disable Module (Enable to disable)</string>
     <string name="switch3">Play Video Sound</string>
     <string name="switch4">Force Private Directory for All Apps</string>
-    <string name="gitee" translatable="false">Go to Gitee Repo (China optimized)</string>
+    <string name="gitee" translatable="false">GHOSTCAM</string>
     <string name="switch5">Disable Toast Messages</string>
     <string name="permission_switch_text">Grant Local Storage Permission</string>
     <string name="permission_lack_warn">Missing Necessary Permissions</string>
@@ -85,6 +85,7 @@
 
     <string name="nav_home">Home</string>
     <string name="nav_manage">Manage</string>
+    <string name="nav_studio">Frame</string>
     <string name="nav_settings">Settings</string>
 
     <string name="settings_language">Language / 语言</string>
@@ -111,7 +112,7 @@
 
     <string name="version_current">Current Version</string>
     <string name="version_latest">Latest Version</string>
-    <string name="version_check_github">Click to check on GitHub</string>
+    <string name="version_check_github">Check for update</string>
 
     <string name="status_module_inactive">Module Not Active</string>
     <string name="status_activate_hint">Please activate the module in Xposed manager and reboot</string>
@@ -124,8 +125,8 @@
     <string name="status_select_image_hint">Please select an image in the Image tab of Manage</string>
 
     <string name="support_title">Support</string>
-    <string name="support_github">View &amp; report issues on GitHub</string>
-    <string name="support_telegram">Join Telegram Channel</string>
+    <string name="support_github">GHOSTCAM support</string>
+    <string name="support_telegram">GHOSTCAM support</string>
     <string name="media_current_selection">Selected</string>
 
     <string name="settings_category_stream">Stream Settings</string>
