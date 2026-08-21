@@ -1,0 +1,20 @@
+name = "ghostcam-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ghostcam"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[vars]
+PUBLIC_APP_URL = "https://YOUR-WORKER.workers.dev"
+SQUARE_ENVIRONMENT = "production"
+SQUARE_LOCATION_ID = "REPLACE_WITH_SQUARE_LOCATION_ID"
+SQUARE_VERSION = "2026-07-16"
+
+# Configure these with `wrangler secret put ...`, never commit their values:
+# ADMIN_TOKEN
+# SQUARE_ACCESS_TOKEN
+# SQUARE_WEBHOOK_SIGNATURE_KEY
+# SQUARE_WEBHOOK_URL
