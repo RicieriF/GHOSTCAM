@@ -1,0 +1,116 @@
+name: Build GHOSTCAM Shell
+
+on:
+  push:
+    branches:
+      - ghostcam-shell
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-protection-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Fetch Golden Core baseline
+        run: git fetch origin main:refs/remotes/origin/main
+
+      - name: Protect original camera core
+        shell: bash
+        run: |
+          set -euo pipefail
+          protected=(
+            "app/src/main/java/io/github/zensu357/camswap/AndroidMediaPlayerBackend.java"
+            "app/src/main/java/io/github/zensu357/camswap/Api101ModuleMain.java"
+            "app/src/main/java/io/github/zensu357/camswap/Api101PackageContext.java"
+            "app/src/main/java/io/github/zensu357/camswap/Camera1Handler.java"
+            "app/src/main/java/io/github/zensu357/camswap/Camera2Handler.java"
+            "app/src/main/java/io/github/zensu357/camswap/Camera2SessionHook.java"
+            "app/src/main/java/io/github/zensu357/camswap/ConfigManager.java"
+            "app/src/main/java/io/github/zensu357/camswap/ConfigReceiver.java"
+            "app/src/main/java/io/github/zensu357/camswap/ConfigWatcher.java"
+            "app/src/main/java/io/github/zensu357/camswap/IpcContract.java"
+            "app/src/main/java/io/github/zensu357/camswap/VideoProvider.java"
+            "app/src/main/cpp"
+            "app/src/main/resources/META-INF/xposed"
+          )
+
+          failed=0
+          for path in "${protected[@]}"; do
+            if ! git diff --quiet origin/main -- "$path"; then
+              echo "::error::GHOSTCAM CORE PROTECTION FAILED: protected original path modified: $path"
+              git diff --stat origin/main -- "$path"
+              failed=1
+            fi
+          done
+
+          if [ "$failed" -ne 0 ]; then
+            echo "Build cancelled because the Golden Core was modified."
+            exit 1
+          fi
+          echo "Golden Core protection: OK"
+
+      - name: Verify original runtime identity
+        run: |
+          grep -q 'applicationId "io.github.zensu357.camswap"' app/build.gradle
+          ! grep -q 'applicationIdSuffix' app/build.gradle
+          grep -qx 'io.github.zensu357.camswap' app/src/main/resources/META-INF/xposed/scope.list
+          grep -q 'io.github.zensu357.camswap.provider' app/src/main/AndroidManifest.xml
+          grep -q 'io.github.zensu357.camswap.provider' app/src/main/java/io/github/zensu357/camswap/IpcContract.java
+          test -f app/src/main/cpp/third_party/Dobby/CMakeLists.txt
+
+      - name: Reject key/access implementation in baseline shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          if find app/src/main -type f \( -name '*.kt' -o -name '*.java' -o -name '*.xml' \) -print0 | xargs -0 grep -Eil '(license[ _-]?key|activation[ _-]?key|key[ _-]?screen|subscription|paywall)' ; then
+            echo "::error::Key/access/paywall implementation detected. This phase must remain key-free."
+            exit 1
+          fi
+          echo "Key/access gate check: OK"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android dependencies
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build debug APKs
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Collect APKs
+        run: |
+          mkdir -p artifacts
+          find app/build/outputs/apk/debug -type f -name '*.apk' -print -exec cp {} artifacts/ \;
+          sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
+
+      - name: Upload GHOSTCAM shell APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: GHOSTCAM-shell-original-core
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
