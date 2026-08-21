@@ -1,107 +1,81 @@
 package io.github.zensu357.camswap.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import io.github.zensu357.camswap.GhostCamLicenseGate
+
+private val GhostRed = Color(0xFFFF2028)
+private val GhostRedDark = Color(0xFFB00020)
+private val GhostBlack = Color(0xFF090909)
+private val GhostSurface = Color(0xFF151515)
+private val GhostWhite = Color(0xFFFFFFFF)
+private val GhostLightSurface = Color(0xFFF5F5F5)
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    onPrimary = Purple40,
-    primaryContainer = PurpleContainerDark,
-    onPrimaryContainer = PurpleContainerLight,
-    
-    secondary = PurpleGrey80,
-    onSecondary = PurpleGrey40,
-    secondaryContainer = PurpleGreyContainerDark,
-    onSecondaryContainer = PurpleGreyContainerLight,
-    
-    tertiary = Pink80,
-    onTertiary = Pink40,
-    tertiaryContainer = PinkContainerDark,
-    onTertiaryContainer = PinkContainerLight,
-    
-    error = Error80,
-    onError = Error40,
-    errorContainer = ErrorContainerDark,
-    onErrorContainer = ErrorContainerLight,
-    
-    background = Neutral10,
-    onBackground = Neutral99,
-    surface = Neutral10,
-    onSurface = Neutral99,
-    surfaceVariant = Neutral20,
-    onSurfaceVariant = PurpleGrey80
+    primary = GhostRed,
+    onPrimary = Color.White,
+    primaryContainer = GhostRedDark,
+    onPrimaryContainer = Color.White,
+    secondary = Color(0xFFBDBDBD),
+    onSecondary = GhostBlack,
+    background = GhostBlack,
+    onBackground = GhostWhite,
+    surface = GhostSurface,
+    onSurface = GhostWhite,
+    surfaceVariant = Color(0xFF232323),
+    onSurfaceVariant = Color(0xFFD0D0D0),
+    error = Color(0xFFFF6B6B),
+    onError = Color.Black
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
+    primary = GhostRed,
     onPrimary = Color.White,
-    primaryContainer = PurpleContainerLight,
-    onPrimaryContainer = PurpleContainerDark,
-    
-    secondary = PurpleGrey40,
+    primaryContainer = Color(0xFFFFDAD9),
+    onPrimaryContainer = Color(0xFF410003),
+    secondary = Color(0xFF4D4D4D),
     onSecondary = Color.White,
-    secondaryContainer = PurpleGreyContainerLight,
-    onSecondaryContainer = PurpleGreyContainerDark,
-    
-    tertiary = Pink40,
-    onTertiary = Color.White,
-    tertiaryContainer = PinkContainerLight,
-    onTertiaryContainer = PinkContainerDark,
-    
-    error = Error40,
-    onError = Color.White,
-    errorContainer = ErrorContainerLight,
-    onErrorContainer = ErrorContainerDark,
-    
-    background = Neutral99,
-    onBackground = Neutral10,
-    surface = Neutral99,
-    onSurface = Neutral10,
-    surfaceVariant = Neutral90,
-    onSurfaceVariant = PurpleGrey40
+    background = GhostWhite,
+    onBackground = GhostBlack,
+    surface = GhostWhite,
+    onSurface = GhostBlack,
+    surfaceVariant = GhostLightSurface,
+    onSurfaceVariant = Color(0xFF4A4A4A),
+    error = Color(0xFFBA1A1A),
+    onError = Color.White
 )
 
 @Composable
 fun CamSwapTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }
     }
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+        typography = Typography
+    ) {
+        GhostCamLicenseGate(content)
+    }
 }
