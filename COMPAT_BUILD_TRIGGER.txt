@@ -1,0 +1,2 @@
+GHOSTCAM compatibility build trigger
+Preserve original package/Xposed/IPC identity.

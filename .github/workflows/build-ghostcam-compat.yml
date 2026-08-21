@@ -1,0 +1,68 @@
+name: Build GHOSTCAM Compatibility APK
+
+on:
+  push:
+    branches:
+      - codex/ghostcam-compat-original-core
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android dependencies
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0" "ndk;25.1.8937393" "cmake;3.22.1"
+
+      - name: Verify original module identity
+        run: |
+          grep -q 'applicationId "io.github.zensu357.camswap"' app/build.gradle
+          ! grep -q 'applicationIdSuffix' app/build.gradle
+          grep -qx 'io.github.zensu357.camswap' app/src/main/resources/META-INF/xposed/scope.list
+          grep -q 'io.github.zensu357.camswap.provider' app/src/main/AndroidManifest.xml
+          grep -q 'io.github.zensu357.camswap.provider' app/src/main/java/io/github/zensu357/camswap/IpcContract.java
+          test -f app/src/main/cpp/third_party/Dobby/CMakeLists.txt
+
+      - name: Make Gradle executable
+        run: chmod +x ./gradlew
+
+      - name: Build debug APKs
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Collect APKs
+        run: |
+          mkdir -p artifacts
+          find app/build/outputs/apk/debug -type f -name '*.apk' -print -exec cp {} artifacts/ \;
+          sha256sum artifacts/*.apk | tee artifacts/SHA256SUMS.txt
+
+      - name: Upload compatibility APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: GHOSTCAM-compat-original-core
+          path: artifacts/*
+          if-no-files-found: error
+          retention-days: 14
