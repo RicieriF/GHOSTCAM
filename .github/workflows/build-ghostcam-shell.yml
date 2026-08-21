@@ -39,7 +39,6 @@ jobs:
             "app/src/main/java/io/github/zensu357/camswap/Camera2SessionHook.java"
             "app/src/main/java/io/github/zensu357/camswap/ConfigManager.java"
             "app/src/main/java/io/github/zensu357/camswap/ConfigReceiver.java"
-            "app/src/main/java/io/github/zensu357/camswap/ConfigWatcher.java"
             "app/src/main/java/io/github/zensu357/camswap/IpcContract.java"
             "app/src/main/java/io/github/zensu357/camswap/VideoProvider.java"
             "app/src/main/cpp"
@@ -62,11 +61,26 @@ jobs:
           fi
           echo "Golden Core protection: OK"
 
+      - name: Validate ConfigWatcher compatibility patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          file="app/src/main/java/io/github/zensu357/camswap/ConfigWatcher.java"
+          tmp_expected="$(mktemp)"
+          git show origin/main:"$file" | sed 's/Context.RECEIVER_NOT_EXPORTED/Context.RECEIVER_EXPORTED/' > "$tmp_expected"
+          if ! cmp -s "$tmp_expected" "$file"; then
+            echo "::error::ConfigWatcher differs from Golden Core beyond the approved Android cross-UID receiver compatibility patch."
+            diff -u "$tmp_expected" "$file" || true
+            exit 1
+          fi
+          echo "ConfigWatcher compatibility patch: OK"
+
       - name: Verify original runtime identity
         run: |
           grep -q 'applicationId "io.github.zensu357.camswap"' app/build.gradle
           ! grep -q 'applicationIdSuffix' app/build.gradle
-          grep -qx 'io.github.zensu357.camswap' app/src/main/resources/META-INF/xposed/scope.list
+          grep -q '^io.github.zensu357.camswap$' app/src/main/resources/META-INF/xposed/scope.list
+          grep -q '^com.motorola.camera3$' app/src/main/resources/META-INF/xposed/scope.list
           grep -q 'io.github.zensu357.camswap.provider' app/src/main/AndroidManifest.xml
           grep -q 'io.github.zensu357.camswap.provider' app/src/main/java/io/github/zensu357/camswap/IpcContract.java
           test -f app/src/main/cpp/third_party/Dobby/CMakeLists.txt
